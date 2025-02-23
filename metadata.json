@@ -1,0 +1,12 @@
+{
+  "name": "Collapsible App Tray",
+  "description": "Groups running and background applications into a collapsible tray",
+  "uuid": "groupedtrayicons@example.com",
+  "shell-version": [
+    "45",
+    "46",
+    "47"
+  ],
+  "version": 1,
+  "settings-schema": "org.gnome.shell.extensions.appindicator"
+}
