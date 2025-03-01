@@ -46,7 +46,12 @@ export function addIconToPanel(statusIcon) {
     Main.panel.statusArea[indicatorId] = null;
   }
 
-  Main.panel.addToStatusArea(indicatorId, statusIcon, 1, settings.get_string('tray-pos'));
+  Main.panel.addToStatusArea(
+    indicatorId,
+    statusIcon,
+    1,
+    settings.get_string('tray-pos')
+  );
 
   Util.connectSmart(settings, 'changed::tray-pos', statusIcon, () =>
     addIconToPanel(statusIcon)
@@ -71,7 +76,12 @@ export const BaseStatusIcon = GObject.registerClass(
       super._init(menuAlignment, nameText, dontCreateMenu);
 
       const settings = SettingsManager.getDefaultGSettings();
-      Util.connectSmart(settings, 'changed::icon-opacity', this, this._updateOpacity);
+      Util.connectSmart(
+        settings,
+        'changed::icon-opacity',
+        this,
+        this._updateOpacity
+      );
       this.connect('notify::hover', () => this._onHoverChanged());
 
       if (!super._onDestroy) this.connect('destroy', () => this._onDestroy());
@@ -109,7 +119,9 @@ export const BaseStatusIcon = GObject.registerClass(
     }
 
     isReady() {
-      throw new GObject.NotImplementedError(`isReady() in ${this.constructor.name}`);
+      throw new GObject.NotImplementedError(
+        `isReady() in ${this.constructor.name}`
+      );
     }
 
     get icon() {
@@ -117,7 +129,9 @@ export const BaseStatusIcon = GObject.registerClass(
     }
 
     get uniqueId() {
-      throw new GObject.NotImplementedError(`uniqueId in ${this.constructor.name}`);
+      throw new GObject.NotImplementedError(
+        `uniqueId in ${this.constructor.name}`
+      );
     }
 
     _showIfReady() {
@@ -206,7 +220,10 @@ export const BaseStatusIcon = GObject.registerClass(
       if (brightnessValue !== 0 | contrastValue !== 0) {
         if (!brightnessContrastEffect) {
           brightnessContrastEffect = new Clutter.BrightnessContrastEffect();
-          this._icon.add_effect_with_name('brightness-contrast', brightnessContrastEffect);
+          this._icon.add_effect_with_name(
+            'brightness-contrast',
+            brightnessContrastEffect
+          );
         }
         brightnessContrastEffect.set_brightness(brightnessValue);
         brightnessContrastEffect.set_contrast(contrastValue);
@@ -241,8 +258,11 @@ export const IndicatorStatusIcon = GObject.registerClass(
         this._updateStatus();
         this._updateLabel();
       });
-      Util.connectSmart(this._indicator, 'accessible-name', this, () =>
-        this.set_accessible_name(this._indicator.accessibleName)
+      Util.connectSmart(
+        this._indicator,
+        'accessible-name',
+        this,
+        () => this.set_accessible_name(this._indicator.accessibleName)
       );
       Util.connectSmart(this._indicator, 'destroy', this, () => this.destroy());
 
@@ -357,7 +377,10 @@ export const IndicatorStatusIcon = GObject.registerClass(
             true,
             Main.panel.menuManager.activeMenu
           );
-        this._indicator.secondaryActivate(event.get_time(), ...event.get_coords());
+        this._indicator.secondaryActivate(
+          event.get_time(),
+          ...event.get_coords()
+        );
         return Clutter.EVENT_STOP;
       }
 
@@ -378,19 +401,35 @@ export const IndicatorStatusIcon = GObject.registerClass(
               Util.Logger.debug(`Submenu closed for ${this.uniqueId}`);
             });
           }
-          // Position the submenu relative to this indicator.
-          if (typeof this.menu.actor.set_anchor_actor === 'function') {
-            this.menu.actor.set_anchor_actor(this);
-          } else {
-            let [x, y] = this.get_transformed_position();
-            let [width, height] = this.get_transformed_size();
-            this.menu.actor.set_position(x, y + height);
+          // Compute the submenu's desired position so it stays within the screen.
+          let [x, y] = this.get_transformed_position();
+          let [actorWidth, actorHeight] = this.get_transformed_size();
+          let screenWidth = Main.layoutManager.primaryMonitor.width;
+          let screenHeight = Main.layoutManager.primaryMonitor.height;
+          let menuWidth = this.menu.actor.get_width();
+          let menuHeight = this.menu.actor.get_height();
+          if (menuWidth <= 0) menuWidth = 200;
+          if (menuHeight <= 0) menuHeight = 300;
+          // Adjust horizontal position.
+          if (x + menuWidth > screenWidth) {
+            x = screenWidth - menuWidth;
+            if (x < 0) x = 0;
           }
+          // Adjust vertical position.
+          if (y + actorHeight + menuHeight > screenHeight) {
+            if (y - menuHeight >= 0) {
+              y = y - menuHeight;
+            } else {
+              y = screenHeight - menuHeight;
+            }
+          } else {
+            y = y + actorHeight;
+          }
+          this.menu.actor.set_position(x, y);
+
           if (!this.menu.isOpen) {
             this.menu.open(BoxPointer.PopupAnimation.SLIDE);
             Util.Logger.debug(`Submenu opened for ${this.uniqueId}`);
-            // Ensure the submenu overlays by making sure its parent is not changed.
-            // (We no longer reparent it here to avoid the "child already has a parent" error.)
           }
           this.menu.actor.grab_key_focus();
         } else {
@@ -491,7 +530,8 @@ export const IndicatorStatusTrayIcon = GObject.registerClass(
     }
 
     vfunc_touch_event(event) {
-      if (!imports.gi.Meta.is_wayland_compositor()) return Clutter.EVENT_PROPAGATE;
+      if (!imports.gi.Meta.is_wayland_compositor())
+        return Clutter.EVENT_PROPAGATE;
 
       const slot = event.get_event_sequence().get_slot();
 

@@ -1,4 +1,3 @@
-// extension.js
 import * as Extension from 'resource:///org/gnome/shell/extensions/extension.js';
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
@@ -256,6 +255,10 @@ export default class CollapsibleAppTrayExtension extends Extension.Extension {
           icon.menu.setSourceActor(menuItem);
           icon.menu.open(BoxPointer.PopupAnimation.SLIDE);
           icon.menu.actor.grab_key_focus();
+          this._trayButton.menu._submenuOpen = true; // Set the flag when submenu is opened
+          icon.menu.connect('closed', () => {
+            this._trayButton.menu._submenuOpen = false; // Reset the flag when submenu is closed
+          });
           return Clutter.EVENT_STOP;
         } else if (icon.click) {
           Util.Logger.debug(`Clicking tray icon: ${id}`);
