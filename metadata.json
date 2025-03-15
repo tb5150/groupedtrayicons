@@ -1,7 +1,7 @@
 {
   "name": "Collapsible App Tray",
   "description": "Groups running and background applications into a collapsible tray",
-  "uuid": "groupedtrayicons@example.com",
+  "uuid": "groupedtrayicons@tb5150",
   "shell-version": [
     "45",
     "46",
