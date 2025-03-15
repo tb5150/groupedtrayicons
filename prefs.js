@@ -7,6 +7,7 @@ import GObject from 'gi://GObject';
 import Gio from 'gi://Gio';
 import Gtk from 'gi://Gtk';
 
+// Update imports for newer GNOME Shell versions
 import {
     ExtensionPreferences,
     gettext as _
@@ -14,9 +15,13 @@ import {
 
 const AppIndicatorPreferences = GObject.registerClass(
 class AppIndicatorPreferences extends Gtk.Box {
-    _init(extension) {
+    _init(metadata) {
         super._init({orientation: Gtk.Orientation.VERTICAL, spacing: 30});
-        this._settings = extension.getSettings();
+        
+        // Get settings from metadata
+        this._settings = metadata instanceof ExtensionPreferences 
+            ? metadata.getSettings()
+            : ExtensionPreferences.lookupByUUID(metadata.uuid).getSettings();
 
         let label = null;
         let widget = null;
@@ -209,6 +214,30 @@ class AppIndicatorPreferences extends Gtk.Box {
         this.tray_position_hbox.append(label);
         this.tray_position_hbox.append(widget);
 
+        // Arrow direction
+        this.arrow_direction_hbox = new Gtk.Box({
+            orientation: Gtk.Orientation.HORIZONTAL,
+            spacing: 10,
+            margin_start: 10,
+            margin_end: 10,
+            margin_top: 10,
+            margin_bottom: 10,
+        });
+        label = new Gtk.Label({
+            label: _('Arrow direction'),
+            hexpand: true,
+            halign: Gtk.Align.START,
+        });
+        widget = new Gtk.ComboBoxText();
+        widget.append('down', _('Down'));
+        widget.append('up', _('Up'));
+        widget.append('left', _('Left'));
+        widget.append('right', _('Right'));
+        this._settings.bind('arrow-direction', widget, 'active-id',
+            Gio.SettingsBindFlags.DEFAULT);
+        this.arrow_direction_hbox.append(label);
+        this.arrow_direction_hbox.append(widget);
+
         this.preferences_vbox.append(this.legacy_tray_hbox);
         this.preferences_vbox.append(this.opacity_hbox);
         this.preferences_vbox.append(this.saturation_hbox);
@@ -216,6 +245,7 @@ class AppIndicatorPreferences extends Gtk.Box {
         this.preferences_vbox.append(this.contrast_hbox);
         this.preferences_vbox.append(this.icon_size_hbox);
         this.preferences_vbox.append(this.tray_position_hbox);
+        this.preferences_vbox.append(this.arrow_direction_hbox);
 
         // Custom icons section
 
@@ -319,8 +349,20 @@ class AppIndicatorPreferences extends Gtk.Box {
     }
 });
 
-export default class DockPreferences extends ExtensionPreferences {
+// Update the export for newer GNOME Shell versions
+export default class AppIndicatorExtensionPreferences extends ExtensionPreferences {
     getPreferencesWidget() {
         return new AppIndicatorPreferences(this);
     }
+}
+
+// For compatibility with older GNOME Shell versions
+function init(metadata) {
+    return new AppIndicatorPreferences(metadata);
+}
+
+function buildPrefsWidget(metadata) {
+    const widget = new AppIndicatorPreferences(metadata);
+    widget.show();
+    return widget;
 }

@@ -1,10 +1,11 @@
-import * as Extension from 'resource:///org/gnome/shell/extensions/extension.js';
+import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import Shell from 'gi://Shell';
+import Meta from 'gi://Meta';
 import * as StatusNotifierWatcher from './statusNotifierWatcher.js';
 import * as Interfaces from './interfaces.js';
 import * as TrayIconsManager from './trayIconsManager.js';
@@ -17,9 +18,10 @@ const TRAY_ICON_SIZE = 20;
 const PADDING = 6;
 const ICON_SPACING = 2;
 
-export default class CollapsibleAppTrayExtension extends Extension.Extension {
-  constructor(...args) {
-    super(...args);
+// For compatibility with newer GNOME Shell versions
+export default class CollapsibleAppTrayExtension extends Extension {
+  constructor(metadata) {
+    super(metadata);
 
     Util.Logger.init(this);
     Interfaces.initialize(this);
@@ -32,12 +34,15 @@ export default class CollapsibleAppTrayExtension extends Extension.Extension {
     this._statusNotifierWatcher = null;
     this._watchDog = new Util.NameWatcher(StatusNotifierWatcher.WATCHER_BUS_NAME);
     this._trayManagerInstance = null;
+    this._settings = null;
   }
 
   enable() {
     this._isEnabled = true;
     Util.Logger.debug('Enabling extension');
 
+    // Initialize settings
+    this._settings = this.getSettings();
     SettingsManager.initialize(this);
 
     IndicatorStatusIcon.setCustomIconHandler((icon) => {
@@ -57,6 +62,12 @@ export default class CollapsibleAppTrayExtension extends Extension.Extension {
     this._isEnabled = false;
     Util.Logger.debug('Disabling extension');
 
+    // Disconnect the arrow direction signal handler
+    if (this._arrowDirectionChangedId && this._settings) {
+      this._settings.disconnect(this._arrowDirectionChangedId);
+      this._arrowDirectionChangedId = null;
+    }
+
     if (this._trayButton) {
       this._trayButton.destroy();
       this._trayButton = null;
@@ -73,6 +84,7 @@ export default class CollapsibleAppTrayExtension extends Extension.Extension {
     this._cleanupAppTracking();
     SettingsManager.destroy();
     this._trayManagerInstance = null;
+    this._settings = null;
     Util.Logger.debug('Extension disabled');
   }
 
@@ -80,8 +92,21 @@ export default class CollapsibleAppTrayExtension extends Extension.Extension {
     this._trayButton = new PanelMenu.Button(0.0, 'CollapsibleAppTray', false);
     Util.Logger.debug('Creating tray button');
 
+    // Get the arrow direction from settings
+    const arrowDirection = this._settings.get_string('arrow-direction') || 'down';
+    
+    // Map direction to icon name
+    const directionToIcon = {
+      'down': 'pan-down-symbolic',
+      'up': 'pan-up-symbolic',
+      'left': 'pan-start-symbolic',
+      'right': 'pan-end-symbolic'
+    };
+    
+    const iconName = directionToIcon[arrowDirection] || 'pan-down-symbolic';
+    
     const icon = new St.Icon({
-      icon_name: 'pan-down-symbolic',
+      icon_name: iconName,
       style_class: 'system-status-icon',
       icon_size: TRAY_ICON_SIZE,
     });
@@ -91,6 +116,14 @@ export default class CollapsibleAppTrayExtension extends Extension.Extension {
     } else {
       this._trayButton.add_child(icon);
     }
+
+    // Connect to settings change to update the icon when the setting changes
+    this._arrowDirectionChangedId = this._settings.connect('changed::arrow-direction', () => {
+      const newDirection = this._settings.get_string('arrow-direction') || 'down';
+      const newIconName = directionToIcon[newDirection] || 'pan-down-symbolic';
+      icon.icon_name = newIconName;
+      Util.Logger.debug(`Arrow direction changed to: ${newDirection}`);
+    });
 
     this._traySection = new PopupMenu.PopupMenuSection();
     this._trayBox = new St.BoxLayout({
@@ -294,5 +327,23 @@ export default class CollapsibleAppTrayExtension extends Extension.Extension {
       Util.Logger.error(`Error in _maybeEnableAfterNameAvailable: ${e.message}`);
       this._populateTrayIcons();
     }
+  }
+}
+
+// For compatibility with older GNOME Shell versions
+function init(metadata) {
+  return new CollapsibleAppTrayExtension(metadata);
+}
+
+function enable() {
+  const extension = init();
+  extension.enable();
+  return extension;
+}
+
+function disable() {
+  const extension = Main.extensionManager.lookup('groupedtrayicons@example.com');
+  if (extension) {
+    extension.disable();
   }
 }

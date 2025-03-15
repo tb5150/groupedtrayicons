@@ -5,8 +5,10 @@
   "shell-version": [
     "45",
     "46",
-    "47"
+    "47",
+    "48"
   ],
   "version": 1,
-  "settings-schema": "org.gnome.shell.extensions.appindicator"
+  "settings-schema": "org.gnome.shell.extensions.appindicator",
+  "url": "https://github.com/example/groupedtrayicons"
 }

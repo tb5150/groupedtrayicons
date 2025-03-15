@@ -40,6 +40,11 @@
       <summary>Order in tray</summary>
       <description>Set where the Icon tray should appear among other trays</description>
     </key>
+    <key name="arrow-direction" type="s">
+      <default>"down"</default>
+      <summary>Arrow direction</summary>
+      <description>Direction the arrow icon points (down, up, left, right)</description>
+    </key>
     <key name="custom-icons" type="a(sss)">
       <default>[]</default>
       <summary>Custom icons</summary>

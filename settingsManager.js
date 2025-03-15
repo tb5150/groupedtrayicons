@@ -22,8 +22,10 @@ export class SettingsManager {
     }
 
     static destroy() {
-        SettingsManager._settingsManager.destroy();
-        SettingsManager._settingsManager = null;
+        if (SettingsManager._settingsManager) {
+            SettingsManager._settingsManager.destroy();
+            SettingsManager._settingsManager = null;
+        }
     }
 
     static getDefault() {
@@ -38,7 +40,7 @@ export class SettingsManager {
         if (settingsManager)
             throw new Error('SettingsManager is already constructed');
 
-        this._gsettings = extension.getSettings();
+        this._gsettings = extension._settings || extension.getSettings();
     }
 
     destroy() {
@@ -51,5 +53,6 @@ export function getDefault() {
 }
 
 export function getDefaultGSettings() {
-    return SettingsManager.getDefault().gsettings;
+    const manager = SettingsManager.getDefault();
+    return manager ? manager.gsettings : null;
 }
