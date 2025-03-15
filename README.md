@@ -2,7 +2,8 @@
 
 A GNOME Shell extension that groups running and background applications into a collapsible tray, similar to how Windows handles system tray icons.
 
-![Screenshot of Collapsible App Tray](screenshot.png)
+![screenshot_7990](https://github.com/user-attachments/assets/dfb015a8-bff7-410b-bbc9-479417c18498)
+
 
 ## Features
 
